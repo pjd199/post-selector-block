@@ -1,4 +1,4 @@
-name: Create WordPress Plugin Release
+name: Manual WordPress Plugin Release
 
 on:
   workflow_dispatch:
@@ -16,43 +16,45 @@ jobs:
       - name: Get Plugin Version
         id: get_version
         run: |
-          VERSION=$(grep -m 1 "Version:" post-selector.php | awk '{print $NF}' | tr -d '\r')
+          # Look for version in the src directory
+          VERSION=$(grep -m 1 "Version:" src/post-selector.php | awk '{print $NF}' | tr -d '\r')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if Release Exists
+      - name: Validate Release Version
         id: check_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Check if the tag already exists in GitHub Releases
-          if gh release view ${{ steps.get_version.outputs.tag }} >/dev/null 2>&1; then
-            echo "Release ${{ steps.get_version.outputs.tag }} already exists. Skipping..."
-            echo "exists=true" >> $GITHUB_OUTPUT
+          if gh release view v${{ env.VERSION }} >/dev/null 2>&1; then
+            echo "::error::Release v${{ env.VERSION }} already exists! Please update the version in src/post-selector.php before running."
             exit 1
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version is new. Proceeding..."
           fi
 
       - name: Prepare Plugin for Zipping
-        if: steps.check_release.outputs.exists == 'false'
         run: |
+          # 1. Create the destination folder
           mkdir -p post-selector
-          cp post-selector.php post-selector/
-          cp post-selector.js post-selector/
-          cp README.md post-selector/
+          
+          # 2. Copy everything from src into the plugin folder
+          cp -r src/* post-selector/
+          
+          # 3. Include the README from the root if it's there
+          if [ -f README.md ]; then cp README.md post-selector/; fi
 
       - name: Create Zip Archive
-        if: steps.check_release.outputs.exists == 'false'
         run: |
+          # Zip the folder so it extracts as post-selector/file.php
           zip -r post-selector.zip post-selector/
 
       - name: Create GitHub Release
-        if: steps.check_release.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.get_version.outputs.tag }}
-          name: Release ${{ steps.get_version.outputs.tag }}
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           files: post-selector.zip
+          generate_release_notes: true # Bonus: Auto-generates changelog from commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
