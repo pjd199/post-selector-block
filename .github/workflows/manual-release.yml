@@ -3,6 +3,9 @@ name: Manual WordPress Plugin Release
 on:
   workflow_dispatch: # Allows you to run this manually from the "Actions" tab
 
+permissions:
+  contents: write
+
 jobs:
   build_release:
     runs-on: ubuntu-latest
