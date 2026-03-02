@@ -29,6 +29,7 @@ jobs:
           if gh release view ${{ steps.get_version.outputs.tag }} >/dev/null 2>&1; then
             echo "Release ${{ steps.get_version.outputs.tag }} already exists. Skipping..."
             echo "exists=true" >> $GITHUB_OUTPUT
+            exit 1
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
