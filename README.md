@@ -1,4 +1,4 @@
-# Post Selector
+# Post Selector Block
 
 A lightweight WordPress plugin that extends the Core Query Loop block to allow for manual post selection and custom ordering via a tag-based search interface.
 
@@ -25,4 +25,5 @@ A lightweight WordPress plugin that extends the Core Query Loop block to allow f
 5.  Type the title of a post you want to include.
 6.  Click the suggestion to add it as a "tag."
 7.  **To Reorder:** Simply delete and re-add tags in the specific sequence you desire, or drag tokens (depending on your WP version support).
+
 8.  **To Remove:** Click the `X` on any post tag.
