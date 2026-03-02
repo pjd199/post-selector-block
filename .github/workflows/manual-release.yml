@@ -1,7 +1,7 @@
 name: Manual WordPress Plugin Release
 
 on:
-  workflow_dispatch: # Allows you to run this manually from the "Actions" tab
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,30 +16,42 @@ jobs:
       - name: Get Plugin Version
         id: get_version
         run: |
-          # Extracts the version number from the PHP header
           VERSION=$(grep -m 1 "Version:" post-selector.php | awk '{print $NF}' | tr -d '\r')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if Release Exists
+        id: check_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if the tag already exists in GitHub Releases
+          if gh release view ${{ steps.get_version.outputs.tag }} >/dev/null 2>&1; then
+            echo "Release ${{ steps.get_version.outputs.tag }} already exists. Skipping..."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Prepare Plugin for Zipping
+        if: steps.check_release.outputs.exists == 'false'
         run: |
-          # Create a temporary directory to ensure the zip has the correct internal folder structure
           mkdir -p post-selector
           cp post-selector.php post-selector/
           cp post-selector.js post-selector/
           cp README.md post-selector/
 
       - name: Create Zip Archive
+        if: steps.check_release.outputs.exists == 'false'
         run: |
           zip -r post-selector.zip post-selector/
 
       - name: Create GitHub Release
+        if: steps.check_release.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.VERSION }}
-          name: Release v${{ env.VERSION }}
-          draft: false
-          prerelease: false
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Release ${{ steps.get_version.outputs.tag }}
           files: post-selector.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
