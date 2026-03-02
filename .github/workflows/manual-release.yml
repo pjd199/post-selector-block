@@ -1,0 +1,42 @@
+name: Manual WordPress Plugin Release
+
+on:
+  workflow_dispatch: # Allows you to run this manually from the "Actions" tab
+
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Plugin Version
+        id: get_version
+        run: |
+          # Extracts the version number from the PHP header
+          VERSION=$(grep -m 1 "Version:" post-selector.php | awk '{print $NF}' | tr -d '\r')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Prepare Plugin for Zipping
+        run: |
+          # Create a temporary directory to ensure the zip has the correct internal folder structure
+          mkdir -p post-selector
+          cp post-selector.php post-selector/
+          cp post-selector.js post-selector/
+          cp README.md post-selector/
+
+      - name: Create Zip Archive
+        run: |
+          zip -r post-selector.zip post-selector/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          files: post-selector.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
