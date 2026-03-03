@@ -52,14 +52,14 @@ jobs:
       - name: Create Zip Archive
         run: |
           # Create [plugin-slug].zip containing the [plugin-slug] folder
-          zip -r ${{ env.PLUGIN_SLUG }}.zip ${{ env.PLUGIN_SLUG }}/
+          zip -r ${{ env.PLUGIN_SLUG }}-${{ env.VERSION }}.zip ${{ env.PLUGIN_SLUG }}/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.VERSION }}
           name: Release v${{ env.VERSION }}
-          files: ${{ env.PLUGIN_SLUG }}.zip
+          files: ${{ env.PLUGIN_SLUG }}-${{ env.VERSION }}.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
